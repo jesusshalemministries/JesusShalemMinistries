@@ -1,0 +1,6 @@
+{
+  "name": "Jesus Shalem Ministries",
+  "description": "A premium full-stack Church Website and Admin CMS featuring a luxury black and gold theme, customizable church pages, sermons, events, prayer requests, donations, and an AI-powered bible helper.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

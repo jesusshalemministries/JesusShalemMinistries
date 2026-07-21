@@ -1,0 +1,924 @@
+import fs from 'fs';
+import path from 'path';
+import { ChurchDatabase, ChurchSettings, PastorDetails, Ministry, Sermon, Event, GalleryItem, Testimonial, PrayerRequest, ContactMessage, DonationRecord, ActivityLog, Notification, NewsLetter } from '../src/types';
+
+const DB_DIR = path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DB_DIR, 'db.json');
+
+// Ensure database directory exists
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+}
+
+// Pre-seeded assets
+const LOGO_URL = '/src/assets/images/church_logo_new_1784635370468.jpg';
+const HERO_URL = '/src/assets/images/church_building_new_1784636792290.jpg';
+const PASTOR_URL = '/src/assets/images/pastor_portrait_1784460224662.jpg';
+
+// Pre-seeded fallback Unsplash images for ministries, events, gallery
+const MIN_YOUTH_IMG = 'https://images.unsplash.com/photo-1526976733009-70a72988d8b8?auto=format&fit=crop&q=80&w=800';
+const MIN_KIDS_IMG = 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&q=80&w=800';
+const MIN_WOMEN_IMG = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=800';
+const MIN_MEN_IMG = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800';
+const MIN_WORSHIP_IMG = 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&q=80&w=800';
+const MIN_PRAYER_IMG = 'https://images.unsplash.com/photo-1444492417251-a581a3b40ee9?auto=format&fit=crop&q=80&w=800';
+const MIN_EVANGELISM_IMG = 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&q=80&w=800';
+const MIN_STUDY_IMG = 'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?auto=format&fit=crop&q=80&w=800';
+
+const EVENT_SUMMER_IMG = 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=800';
+const EVENT_YOUTH_IMG = 'https://images.unsplash.com/photo-1523580494863-6f303122450d?auto=format&fit=crop&q=80&w=800';
+const EVENT_PRAYER_IMG = 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&q=80&w=800';
+
+const INITIAL_DB: ChurchDatabase = {
+  settings: {
+    churchName: {
+      en: 'Jesus Shalem Ministries',
+      te: 'యేసు శాలేము మినిస్ట్రీస్'
+    },
+    pastorName: {
+      en: 'Pastor Mande. SHALEM RAJU',
+      te: 'పాస్టర్ మందే. శాలేము రాజు'
+    },
+    phone: '+91 7981788313',
+    email: 'JesusShalemMinistries@gmail.com',
+    address: {
+      en: 'Ponnavaram, Kanchikacharla, Andhra Pradesh, India',
+      te: 'పొన్నవరం, కంచికచర్ల, ఆంధ్రప్రదేశ్, భారతదేశం'
+    },
+    instagram: 'jesus_shalem_ministries',
+    instagramLink: 'https://www.instagram.com/jesus_shalem_ministries?igsh=ajljZjB1NnB3ZXBi',
+    whatsappName: 'Jesus Shalem Ministries',
+    whatsappLink: 'https://whatsapp.com/channel/0029VbDHZ7XISTkF4bpo6P1q',
+    youtubeName: 'Jesus Shalem Ministries',
+    youtubeLink: 'https://youtube.com/@jesusshalemministries?si=m7OCOrD0zA2R6LLk',
+    logoUrl: LOGO_URL,
+    heroBannerUrl: HERO_URL,
+    pastorPortraitUrl: PASTOR_URL,
+    pastorPortraitWidthHome: '260px',
+    pastorPortraitHeightHome: '280px',
+    pastorPortraitHeightBio: '380px',
+    heroSliderHeight: '85vh',
+    bibleVerse: {
+      verse: {
+        en: '"Believe in the Lord Jesus, and you will be saved—you and your household."',
+        te: '"ప్రభువైన యేసునందు విశ్వాసముంచుము, అప్పుడు నీవును నీ యింటివారును రక్షణ పొందుదురు."'
+      },
+      reference: {
+        en: 'Acts 16:31',
+        te: 'అపొస్తలుల కార్యములు 16:31'
+      }
+    },
+    mission: {
+      en: 'To preach the unconditional love of Jesus Christ to every nation, equipping believers to grow in spiritual maturity and establish God\'s kingdom on earth through prayers, healing ministries, and active outreach.',
+      te: 'యేసుక్రీస్తు యొక్క షరతులు లేని ప్రేమను ప్రతి దేశానికి ప్రకటించడం, ప్రార్థనలు, స్వస్థత పరిచర్యలు మరియు క్రియాశీలక ప్రచారాల ద్వారా విశ్వాసులను ఆత్మీయ పరిపక్వతలో ఎదగడానికి మరియు భూమిపై దేవుని రాజ్యాన్ని స్థాపించడానికి సిద్ధం చేయడం.'
+    },
+    vision: {
+      en: 'To build a vibrant, multi-ethnic Christ-centered church community where the broken-hearted find restoration, the sick receive healing, and every individual is empowered to fulfill their divine calling under the guidance of the Holy Spirit.',
+      te: 'పరిశుద్ధాత్మ నడిపింపుతో హృదయాలు నలిగిన వారికి పునరుద్ధరణ, రోగులకు స్వస్థత లభించే మరియు ప్రతి వ్యక్తి తన దైవిక పిలుపును నెరవేర్చడానికి అధికారం పొందే శక్తివంతమైన, క్రీస్తు-కేంద్రీకృత సంఘాన్ని నిర్మించడం.'
+    },
+    donationUpi: '7981788313@ybl',
+    donationQrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=7981788313@ybl&pn=Jesus%20Shalem%20Ministries&mc=0000&mode=02&purpose=00',
+    bankDetails: {
+      bankName: 'State Bank of India (SBI)',
+      accountName: 'Jesus Shalem Ministries',
+      accountNumber: '38920485932',
+      ifscCode: 'SBIN0012345',
+      branch: 'Kanchikacharla Branch'
+    },
+    seoKeywords: 'Jesus Shalem Ministries, Pastor Shalem Raju, Kanchikacharla Church, Ponnavaram Telugu Church, Online Bible, Church Prayer Request',
+    seoDescription: 'Welcome to Jesus Shalem Ministries, led by Pastor Mande. SHALEM RAJU in Ponnavaram, Kanchikacharla. Experience luxury divine worship, sermons, live streams, and prayer requests.',
+    footerText: {
+      en: 'Jesus Shalem Ministries © 2026. Dedicated to spreading the light of the Gospel of Jesus Christ to the ends of the Earth.',
+      te: 'యేసు శాలేము మినిస్ట్రీస్ © 2026. భూమి దిగంతాల వరకు యేసుక్రీస్తు సువార్త వెలుగును వ్యాపింపజేయడానికి అంకితం చేయబడింది.'
+    },
+    aboutHistory: {
+      en: 'Jesus Shalem Ministries was founded in Ponnavaram under the guidance of the Holy Spirit by Pastor Mande. SHALEM RAJU. What started as a small prayer gathering has blossomed into a glorious regional hub of faith, offering hope, healing, and divine guidance to thousands. Over the years, the ministry has established strong initiatives in youth development, women counseling, local village evangelism, and round-the-clock intercessory prayers.',
+      te: 'యేసు శాలేము మినిస్ట్రీస్ పొన్నవరంలో పరిశుద్ధాత్మ నడిపింపుతో పాస్టర్ మందే. శాలేము రాజు గారి ద్వారా స్థాపించబడింది. చిన్న ప్రార్థన కూటముగా ప్రారంభమైన ఈ పరిచర్య నేడు వేలాది మందికి నిరీక్షణ, స్వస్థత మరియు దైవిక మార్గదర్శకత్వాన్ని అందించే అద్భుతమైన విశ్వాస కేంద్రంగా ఎదిగింది. ఈ పరిచర్య ద్వారా యువత అభివృద్ధి, స్త్రీల కౌన్సెలింగ్, స్థానిక గ్రామీణ సువార్త మరియు నిరంతర ప్రార్థనలు బలంగా నిర్వహించబడుతున్నాయి.'
+    }
+  },
+  pastor: {
+    name: {
+      en: 'Pastor Mande. SHALEM RAJU',
+      te: 'పాస్టర్ మందే. శాలేము రాజు'
+    },
+    photoUrl: PASTOR_URL,
+    bio: {
+      en: 'Pastor Mande. SHALEM RAJU is a chosen vessel of God, operating in the gifts of the Holy Spirit, teaching with profound biblical authority, and leading with deep spiritual fatherhood. His compassionate heart and fervent intercessory prayers have transformed countless lives, bringing spiritual liberation, physical healing, and deep-seated peace to families across the region.',
+      te: 'పాస్టర్ మందే. శాలేము రాజు గారు దేవునిచే ఎన్నుకోబడిన పాత్రగా, పరిశుద్ధాత్మ వరాలతో పనిచేస్తూ, లోతైన బైబిల్ అధికారంతో బోధిస్తూ, ఆత్మీయ తండ్రిగా నడిపిస్తున్నారు. ఆయన దయా హృదయం మరియు ఉద్వేగభరితమైన మధ్యవర్తిత్వ ప్రార్థనలు లెక్కలేనన్ని జీవితాలను మార్చాయి, ఈ ప్రాంతంలోని కుటుంబాలకు ఆత్మీయ విముక్తి, శారీరక స్వస్థత మరియు శాంతిని అందించాయి.'
+    },
+    journey: {
+      en: 'With over two decades of dedicated pastoral service, Pastor Shalem Raju answered the divine call in his youth. Leaving behind worldly aspirations, he fully surrendered to the Gospel, establishing Jesus Shalem Ministries in Ponnavaram, Kanchikacharla. Through persistent faith, divine miracles, and relentless evangelistic work, he has nurtured a thriving congregation committed to active discipleship and community welfare.',
+      te: 'రెండు దశాబ్దాలకు పైగా అంకితభావంతో కూడిన పరిచర్యతో, పాస్టర్ శాలేము రాజు గారు తన యవ్వనంలో దైవిక పిలుపుకు సమాధానమిచ్చారు. లౌకిక ఆకాంక్షలను విడిచిపెట్టి, ఆయన సువార్తకు పూర్తిగా లొంగిపోయి, పొన్నవరం, కంచికచర్లలో యేసు శాలేము మినిస్ట్రీస్‌ను స్థాపించారు. పట్టుదల గల విశ్వాసం, అద్భుతాలు మరియు నిరంతర సువార్త సేవ ద్వారా, ఆయన సంఘాన్ని ఆత్మీయంగా నడిపిస్తున్నారు.'
+    },
+    vision: {
+      en: 'To plant regional prayer centers, reach unreached tribal villages, empower the next generation of youth leaders, provide compassionate support to orphans and widows, and foster a culture of uninterrupted, global 24/7 prayer shields.',
+      te: 'ప్రాంతీయ ప్రార్థన కేంద్రాలను స్థాపించడం, సువార్త వినని గిరిజన గ్రామాలను చేరుకోవడం, తదుపరి తరం యువ నాయకులను సన్నద్ధం చేయడం, అనాథలు మరియు వితంతువులకు ప్రేమతో కూడిన సహాయాన్ని అందించడం మరియు నిరంతర 24/7 ప్రార్థన సంస్కృతిని పెంపొందించడం.'
+    },
+    achievements: [
+      {
+        en: 'Established active village evangelism reaching over 50 rural hamlets around Kanchikacharla.',
+        te: 'కంచికచర్ల పరిసర ప్రాంతాల్లోని 50కి పైగా గ్రామీణ ప్రాంతాలకు సువార్త పరిచర్యను విస్తరించారు.'
+      },
+      {
+        en: 'Organized massive annual Healing & Gospel Crusades with miraculous divine turnouts.',
+        te: 'అనేక అద్భుతాలతో కూడిన వార్షిక స్వస్థత మరియు సువార్త కూటములను విజయవంతంగా నిర్వహించారు.'
+      },
+      {
+        en: 'Nurtured a robust, values-driven youth and worship ministry of over 300 active young disciples.',
+        te: '300 మందికి పైగా క్రియాశీల యువ శిష్యులతో బలమైన యువత మరియు ఆరాధన పరిచర్యను అభివృద్ధి చేశారు.'
+      }
+    ],
+    socials: {
+      instagram: 'https://www.instagram.com/jesus_shalem_ministries?igsh=ajljZjB1NnB3ZXBi',
+      youtube: 'https://youtube.com/@jesusshalemministries?si=m7OCOrD0zA2R6LLk',
+      whatsapp: 'https://whatsapp.com/channel/0029VbDHZ7XISTkF4bpo6P1q'
+    }
+  },
+  ministries: [
+    {
+      id: 'youth',
+      name: { en: 'Youth Ministry', te: 'యువత పరిచర్య' },
+      title: { en: 'Empowering the Next Generation', te: 'తదుపరి తరాన్ని బలోపేతం చేయడం' },
+      description: {
+        en: 'Raising young men and women of high character, deep-rooted faith, and dynamic purpose to lead their generation.',
+        te: 'మంచి ప్రవర్తన, లోతైన విశ్వాసం మరియు తమ తరాన్ని నడిపించే క్రియాశీల ఉద్దేశ్యంతో కూడిన యువతీ యువకులను తయారు చేయడం.'
+      },
+      content: {
+        en: 'Our Youth Ministry is a vibrant gathering of teenagers and young adults focusing on real-world discipleship, spiritual growth, fellowship, and active volunteer service. We hold weekly youth fellowships, dynamic bible study groups, annual youth camps, and creative performing arts sessions. Under Pastor Shalem Raju\'s guidance, the youth are equipped with leadership qualities to influence schools, workplaces, and families with the Gospel.',
+        te: 'మా యువజన పరిచర్య అనేది యువతీ యువకుల కొరకు ఒక శక్తివంతమైన వేదిక. మేము వారపు కూటములు, వార్షిక యూత్ క్యాంపులు మరియు సృజనాత్మక ప్రదర్శనలను నిర్వహిస్తాము. పాస్టర్ శాలేము రాజు గారి మార్గదర్శకత్వంలో, యువత పాఠశాలలు, కార్యాలయాలు మరియు కుటుంబాలపై సువార్త ప్రభావం చూపించడానికి నాయకత్వ లక్షణాలతో సిద్ధపరచబడుతున్నారు.'
+      },
+      imageUrl: MIN_YOUTH_IMG,
+      category: 'youth'
+    },
+    {
+      id: 'children',
+      name: { en: 'Children\'s Ministry', te: 'పిల్లల పరిచర్య' },
+      title: { en: 'Sowing Seeds of Eternal Faith', te: 'నిత్య విశ్వాస విత్తనాలను నాటడం' },
+      description: {
+        en: 'Nurturing young hearts in a safe, fun, and highly loving environment to understand God\'s word.',
+        te: 'పిల్లల హృదయాలను సురక్షితమైన, ఆనందదాయకమైన మరియు ప్రేమపూర్వక వాతావరణంలో దేవుని వాక్యాన్ని గ్రహించేలా పెంచడం.'
+      },
+      content: {
+        en: 'Our Sunday School and Children\'s Ministry is dedicated to building strong biblical foundations in kids aged 3 to 13. Through engaging story sessions, visual Bible lessons, interactive action songs, and beautiful arts & crafts, children learn the character of God, the love of Jesus, and the importance of prayer. We believe in partnering with parents to raise god-fearing and respectful children.',
+        te: 'మా సండే స్కూల్ మరియు పిల్లల పరిచర్య 3 నుండి 13 సంవత్సరాల వయస్సు గల పిల్లలలో బలమైన బైబిల్ పునాదులను నిర్మించడానికి అంకితం చేయబడింది. ఆకర్షణీయమైన కథలు, యాక్షన్ పాటలు మరియు క్రాఫ్ట్స్ ద్వారా పిల్లలు దేవుని ప్రేమను నేర్చుకుంటారు.'
+      },
+      imageUrl: MIN_KIDS_IMG,
+      category: 'children'
+    },
+    {
+      id: 'women',
+      name: { en: 'Women\'s Ministry', te: 'మహిళల పరిచర్య' },
+      title: { en: 'Daughters of Grace & Valor', te: 'కృప మరియు శౌర్యం గల కుమార్తెలు' },
+      description: {
+        en: 'Uniting women of all ages to support each other, grow in prayer, and serve the family unit.',
+        te: 'మహిళలందరినీ ఒకచోట చేర్చి, ఒకరికొకరు మద్దతు ఇచ్చుకుంటూ, ప్రార్థనలో ఎదుగుతూ, కుటుంబ వ్యవస్థకు సేవ చేయడం.'
+      },
+      content: {
+        en: 'The Women\'s Fellowship at Jesus Shalem Ministries is a beautiful sanctuary of sisterhood. Regular monthly meetings focus on intercessory prayer, marriage counseling, family management, and small-scale community support programs. Women are inspired to become pillars of prayer in their respective households, standing firm in faith like Esther and Deborah of old.',
+        te: 'యేసు శాలేము మినిస్ట్రీస్‌లోని మహిళల కూటం ప్రార్థనకు మరియు కుటుంబ కౌన్సెలింగ్‌కు ఒక అద్భుతమైన వేదిక. ప్రతి నెలా ప్రార్థన కూటములు మరియు కుటుంబ నిర్వహణపై తరగతులు జరుగుతాయి.'
+      },
+      imageUrl: MIN_WOMEN_IMG,
+      category: 'women'
+    },
+    {
+      id: 'men',
+      name: { en: 'Men\'s Ministry', te: 'పురుషుల పరిచర్య' },
+      title: { en: 'Men of Honor & Spiritual Integrity', te: 'గౌరవం మరియు ఆత్మీయ నిబద్ధత గల పురుషులు' },
+      description: {
+        en: 'Building strong fathers, devoted husbands, and reliable community leaders grounded in Word.',
+        te: 'వాక్యంలో స్థిరపడిన బలమైన తండ్రులను, అంకితభావం గల భర్తలను మరియు విశ్వసనీయ సమాజ నాయకులను నిర్మించడం.'
+      },
+      content: {
+        en: 'Our Men\'s Fellowship is centered on spiritual accountability, leadership, and integrity. Men are challenged to rise up as the priest of their households, leading by example. We focus on active Bible discussions, leadership panels, and practical service projects to assist local churches and needy families.',
+        te: 'మా పురుషుల పరిచర్య ఆత్మీయ బాధ్యత మరియు నాయకత్వంపై దృష్టి పెడుతుంది. పురుషులు తమ ఇళ్లలో ప్రార్థనా పూర్వక నడిపింపును కలిగి ఉండడానికి మరియు సమాజానికి సహాయకరంగా ఉండడానికి ప్రోత్సహించబడుతున్నారు.'
+      },
+      imageUrl: MIN_MEN_IMG,
+      category: 'men'
+    },
+    {
+      id: 'worship',
+      name: { en: 'Worship Team', te: 'ఆరాధన పరిచర్య' },
+      title: { en: 'Lifting Heavenly Praises', te: 'పరలోక స్తుతులను చెల్లించడం' },
+      description: {
+        en: 'Leading the congregation into deep, heartfelt, and powerful encounters with God\'s presence through praise.',
+        te: 'స్తుతి మరియు ఆరాధన ద్వారా దేవుని మహిమకరమైన సన్నిధిలోకి సంఘాన్ని నడిపించడం.'
+      },
+      content: {
+        en: 'The Jesus Shalem Worship Team consists of anointed singers, musicians, and audio technicians dedicated to raising high-quality, spirit-led praise. Combining traditional Telugu Christian hymns with modern contemporary praise tracks, our worship team sets an atmosphere of absolute devotion and celebration during our primary worship services.',
+        te: 'యేసు శాలేము ఆరాధన బృందం దేవుని అభిషేకం పొందిన గాయకులు మరియు వాయిద్యకారులతో కూడి ఉంది. సాంప్రదాయ తెలుగు క్రైస్తవ కీర్తనలు మరియు ఆధునిక ఆరాధన పాటలతో ఆరాధన నిర్వహిస్తారు.'
+      },
+      imageUrl: MIN_WORSHIP_IMG,
+      category: 'worship'
+    },
+    {
+      id: 'prayer',
+      name: { en: 'Prayer Ministry', te: 'ప్రార్థన పరిచర్య' },
+      title: { en: 'The Engine of Miracles', te: 'అద్భుతాల చలనశీల యంత్రం' },
+      description: {
+        en: 'Interceding round the clock for your urgent requests, local revival, and global healing.',
+        te: 'మీ అత్యవసర అవసరాలు, స్థానిక ఆత్మీయ పునరుజ్జీవనం మరియు ప్రపంచ స్వస్థత కోసం నిరంతరం ప్రార్థించడం.'
+      },
+      content: {
+        en: 'Prayer is the foundational pillar of Jesus Shalem Ministries. Our dedicated intercessory prayer warriors stand in the gap, fasting and praying daily for all submitted prayer requests. We organize regular chain prayers, all-night prayer vigils, and emergency prayer hotlines. If you are going through hard times, our prayer warriors are here to cry out to God on your behalf.',
+        te: 'యేసు శాలేము మినిస్ట్రీస్‌కు ప్రార్థనే పునాది. మా అంకితభావం గల ప్రార్థనా యోధులు ప్రతిరోజూ ఉపవాస ప్రార్థనలు చేస్తారు. మీ కష్ట సమయాల్లో దేవునికి మొరపెట్టడానికి మా బృందం ఎల్లప్పుడూ సిద్ధంగా ఉంది.'
+      },
+      imageUrl: MIN_PRAYER_IMG,
+      category: 'prayer'
+    },
+    {
+      id: 'evangelism',
+      name: { en: 'Evangelism Ministry', te: 'సువార్త పరిచర్య' },
+      title: { en: 'Sharing the Light of Salvation', te: 'రక్షణ వెలుగును పంచుకోవడం' },
+      description: {
+        en: 'Taking the good news of salvation directly to the unreached streets, slums, and rural villages.',
+        te: 'రక్షణ సువార్తను వీధుల్లోకి, బస్తీల్లోకి మరియు గ్రామీణ ప్రాంతాల్లోకి నేరుగా తీసుకెళ్లడం.'
+      },
+      content: {
+        en: 'In line with the Great Commission, our evangelism team actively visits neighboring towns, distributed gospel tracks, conducts open-air preaching, and sets up community help desks. We seek to present the message of Jesus with extreme compassion, relevance, and absolute truth, offering practical hope alongside spiritual transformation.',
+        te: 'మహా ఆజ్ఞకు లోబడి, మా సువార్త బృందం పొరుగు పట్టణాలను సందర్శిస్తుంది, సువార్త పత్రికలను పంపిణీ చేస్తుంది మరియు వీధి కూటములను నిర్వహిస్తుంది.'
+      },
+      imageUrl: MIN_EVANGELISM_IMG,
+      category: 'evangelism'
+    },
+    {
+      id: 'study',
+      name: { en: 'Bible Study Ministry', te: 'బైబిల్ స్టడీ పరిచర్య' },
+      title: { en: 'Deepening Scriptural Foundations', te: 'లేఖనాల లోతైన పునాదులను బలోపేతం చేయడం' },
+      description: {
+        en: 'Systematic expository study of Holy Scriptures to cultivate mature faith and active disciples.',
+        te: 'పరిపక్వ విశ్వాసాన్ని పెంపొందించడానికి పద్ధతి ప్రకారం పరిశుద్ధ లేఖనాలను ధ్యానించడం.'
+      },
+      content: {
+        en: 'Our Bible Study Ministry conducts structured weekly teaching classes, delving into theology, original contexts, and practical life applications of Scripture. Led personally by Pastor Shalem Raju and trained elders, these interactive studies equip believers with correct doctrine, apologetics knowledge, and daily spiritual wisdom.',
+        te: 'మా బైబిల్ స్టడీ పరిచర్య ద్వారా ప్రతి వారం లేఖనాలపై తరగతులు జరుగుతాయి. పాస్టర్ శాలేము రాజు గారి ద్వారా విశ్వాసులకు ఆత్మీయ జ్ఞానం మరియు సరైన సిద్ధాంతం బోధించబడుతుంది.'
+      },
+      imageUrl: MIN_STUDY_IMG,
+      category: 'study'
+    }
+  ],
+  sermons: [
+    {
+      id: 'sermon-1',
+      title: { en: 'The Power of Absolute Faith', te: 'సంపూర్ణ విశ్వాసం యొక్క శక్తి' },
+      description: {
+        en: 'Discover how unwavering faith in Jesus unlocks miraculous doors and delivers you from overwhelming storms.',
+        te: 'యేసునందు కదిలించబడని విశ్వాసం ఎలా అద్భుతాల ద్వారాలను తెరుస్తుందో మరియు తుఫానుల నుండి విడిపిస్తుందో తెలుసుకోండి.'
+      },
+      speaker: { en: 'Pastor Mande. SHALEM RAJU', te: 'పాస్టర్ మందే. శాలేము రాజు' },
+      date: '2026-07-12',
+      category: { en: 'Faith & Deliverance', te: 'విశ్వాసం & విడుదల' },
+      youtubeId: 'pGvHMyo_r60', // Placeholder but realistic
+      isFeatured: true
+    },
+    {
+      id: 'sermon-2',
+      title: { en: 'Living Under the Divine Shield of Grace', te: 'కృప యొక్క దైవిక రక్షణలో జీవించడం' },
+      description: {
+        en: 'A powerful teaching on how the grace of Jesus Christ protects, guides, and empowers our daily walking.',
+        te: 'యేసుక్రీస్తు కృప మన దైనందిన జీవితాన్ని ఎలా కాపాడుతుందో, నడిపిస్తుందో మరియు బలపరుస్తుందో వివరించే ఒక అద్భుతమైన బోధన.'
+      },
+      speaker: { en: 'Pastor Mande. SHALEM RAJU', te: 'పాస్టర్ మందే. శాలేము రాజు' },
+      date: '2026-07-05',
+      category: { en: 'Grace & Mercy', te: 'కృప & కనికరం' },
+      youtubeId: '6Wc6q7D_tB4',
+      isFeatured: true
+    },
+    {
+      id: 'sermon-3',
+      title: { en: 'The Anointing of Intercessory Prayers', te: 'మధ్యవర్తిత్వ ప్రార్థనల అభిషేకం' },
+      description: {
+        en: 'How standing in the gap for others through persistent fasting and prayer breaks generational bondages.',
+        te: 'నిరంతర ఉపవాసం మరియు ప్రార్థన ద్వారా ఇతరుల కోసం నిలబడడం ఎలా తరతరాల బంధకాలను తెంచుతుందో నేర్చుకోండి.'
+      },
+      speaker: { en: 'Pastor Mande. SHALEM RAJU', te: 'పాస్టర్ మందే. శాలేము రాజు' },
+      date: '2026-06-28',
+      category: { en: 'Prayer & Spiritual Warfare', te: 'ప్రార్థన & ఆత్మీయ పోరాటం' },
+      youtubeId: 'e2q3I6g68qM',
+      isFeatured: false
+    }
+  ],
+  events: [
+    {
+      id: 'event-1',
+      title: { en: 'Ponnavaram Healing Crusades 2026', te: 'పొన్నవరం స్వస్థత మహాసభలు 2026' },
+      description: {
+        en: 'Join us for three consecutive nights of miraculous healing, deliverance, powerful worship, and prophetic Gospel messages with Pastor Mande. SHALEM RAJU. Bring the sick, suffering, and oppressed; expect absolute restoration!',
+        te: 'పాస్టర్ మందే. శాలేము రాజు గారితో మూడు రాత్రుల అద్భుతమైన స్వస్థత, విడుదల, శక్తివంతమైన ఆరాధన మరియు ప్రవచన సువార్త కూటములలో పాల్గొనండి. రోగులను మరియు బాధల్లో ఉన్నవారిని తీసుకురండి!'
+      },
+      date: '2026-08-20T18:00:00Z', // In future
+      location: { en: 'JSM Grounds, Ponnavaram', te: 'జేఎస్ఎమ్ గ్రౌండ్స్, పొన్నవరం' },
+      imageUrl: EVENT_SUMMER_IMG,
+      isPast: false,
+      registrationCount: 142
+    },
+    {
+      id: 'event-2',
+      title: { en: 'Annual Youth Revival Conference', te: 'వార్షిక యువజన పునరుజ్జీవన సదస్సు' },
+      description: {
+        en: 'A powerful spiritual gathering for the regional youth to experience dynamic worship, career counseling, spiritual empowerment, and fellowship with peers.',
+        te: 'యువత శక్తివంతమైన ఆరాధన, కెరీర్ కౌన్సెలింగ్, ఆత్మీయ బలోపేతం మరియు సహవాసాన్ని అనుభవించడానికి ఒక అద్భుతమైన కూడిక.'
+      },
+      date: '2026-09-05T09:30:00Z', // In future
+      location: { en: 'Jesus Shalem Worship Hall, Kanchikacharla', te: 'యేసు శాలేము ఆరాధన మందిరం, కంచికచర్ల' },
+      imageUrl: EVENT_YOUTH_IMG,
+      isPast: false,
+      registrationCount: 89
+    },
+    {
+      id: 'event-3',
+      title: { en: 'Mid-Year All-Night Chain Prayer', te: 'మధ్య-సంవత్సర నిరంతర ఉపవాస ప్రార్థన' },
+      description: {
+        en: 'Twelve hours of non-stop prayer interceding for our nation, regional revival, healing of the sick, and spiritual breakthrough in families.',
+        te: 'మన దేశం, ప్రాంతీయ పునరుజ్జీవనం, రోగుల స్వస్థత మరియు కుటుంబాలలో ఆత్మీయ విజయం కోసం 12 గంటల నిరంతర ప్రార్థన కూడిక.'
+      },
+      date: '2026-06-15T19:00:00Z', // Past event
+      location: { en: 'Jesus Shalem Church Altar', te: 'యేసు శాలేము చర్చి బలిపీఠం' },
+      imageUrl: EVENT_PRAYER_IMG,
+      isPast: true,
+      registrationCount: 210
+    }
+  ],
+  gallery: [
+    {
+      id: 'gal-1',
+      type: 'image',
+      url: HERO_URL,
+      caption: { en: 'Glorious Sunday Morning Worship Altar', te: 'మహిమకరమైన ఆదివారం ఉదయకాల ఆరాధన వేదిక' },
+      category: 'Worship'
+    },
+    {
+      id: 'gal-2',
+      type: 'image',
+      url: PASTOR_URL,
+      caption: { en: 'Pastor Mande. SHALEM RAJU delivering scripture', te: 'పాస్టర్ మందే. శాలేము రాజు గారు వాక్యాన్ని అందిస్తున్నారు' },
+      category: 'Pastor'
+    },
+    {
+      id: 'gal-3',
+      type: 'image',
+      url: 'https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&q=80&w=800',
+      caption: { en: 'Youth and Congregation lifting their hands in praise', te: 'ఆరాధనలో చేతులెత్తి దేవుణ్ణి స్తుతిస్తున్న సంఘం' },
+      category: 'Congregation'
+    },
+    {
+      id: 'gal-4',
+      type: 'image',
+      url: 'https://images.unsplash.com/photo-1515162305285-0293e4767cc2?auto=format&fit=crop&q=80&w=800',
+      caption: { en: 'Outdoor Village Gospel Outreach distribution', te: 'గ్రామీణ సువార్త ప్రచారం మరియు పంపిణీ' },
+      category: 'Outreach'
+    }
+  ],
+  testimonials: [
+    {
+      id: 'test-1',
+      name: 'Ramu K.',
+      text: {
+        en: 'I was suffering from chronic kidney illness for over three years. After Pastor Shalem Raju laid hands and offered dynamic intercessory prayers during the Ponnavaram Crusades, God completely healed me. My medical test reports are fully normal now! Glory to Jesus Christ.',
+        te: 'నేను మూడేళ్లుగా మూత్రపిండాల వ్యాధితో బాధపడ్డాను. పొన్నవరం కూటములలో పాస్టర్ శాలేము రాజు గారు నాపై చేతులుంచి ప్రార్థించిన తర్వాత, దేవుడు నన్ను పూర్తిగా స్వస్థపరిచాడు. నా రిపోర్ట్స్ అన్నీ నార్మల్ వచ్చాయి!'
+      },
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+      rating: 5,
+      isApproved: true,
+      date: '2026-07-10'
+    },
+    {
+      id: 'test-2',
+      name: 'Mary Sneha Latha',
+      text: {
+        en: 'Our family was shattered by severe debts and constant division. We requested emergency prayer support from the JSM Prayer team. Through Pastor\'s spiritual guidance and our constant faith, Lord Jesus restored peace in our family and cleared all financial burdens miraculously.',
+        te: 'మా కుటుంబం అప్పుల భారంతో ఎంతో కృంగిపోయింది. మేము జేఎస్ఎమ్ ప్రార్థనా బృందాన్ని సంప్రదించాము. పాస్టర్ గారి ప్రార్థనలు మరియు దైవిక నడిపింపు ద్వారా మా కుటుంబంలో సమాధానం లభించింది.'
+      },
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+      rating: 5,
+      isApproved: true,
+      date: '2026-07-02'
+    }
+  ],
+  prayerRequests: [
+    {
+      id: 'pray-1',
+      name: 'Srinivas Rao',
+      phone: '+91 9848022338',
+      email: 'srinivas.kanchi@gmail.com',
+      request: 'Fasting prayer requested for my daughter\'s final engineering competitive exams and future career alignment.',
+      status: 'Praying',
+      date: '2026-07-18T10:30:00Z'
+    },
+    {
+      id: 'pray-2',
+      name: 'Grace Jyothi',
+      phone: '+91 8122394859',
+      email: 'jyothi.grace@gmail.com',
+      request: 'Prayer requested for immediate physical deliverance from chronic nerve pain and headache.',
+      status: 'Answered',
+      date: '2026-07-15T08:15:00Z'
+    }
+  ],
+  contactMessages: [
+    {
+      id: 'con-1',
+      name: 'David Prasad',
+      email: 'davidprasad@gmail.com',
+      phone: '+91 7893049583',
+      message: 'Greetings in Jesus name. I would love to register as a regular volunteer for the upcoming Ponnavaram Healing Crusades. Please guide me on responsibilities.',
+      date: '2026-07-19T02:00:00Z',
+      isRead: false
+    }
+  ],
+  donations: [
+    {
+      id: 'don-1',
+      donorName: 'Anonymous Disciple',
+      amount: 15000,
+      email: 'disciple@blessed.com',
+      phone: '+91 9900223344',
+      date: '2026-07-17T14:20:00Z',
+      method: 'UPI',
+      status: 'Completed'
+    },
+    {
+      id: 'don-2',
+      donorName: 'John Christopher',
+      amount: 5000,
+      email: 'john.christ@gmail.com',
+      phone: '+91 8899112233',
+      date: '2026-07-14T11:10:00Z',
+      method: 'Bank Transfer',
+      status: 'Completed'
+    }
+  ],
+  activityLogs: [
+    {
+      id: 'log-1',
+      user: 'admin',
+      action: 'Seeded initial church configurations and multimedia assets',
+      date: '2026-07-19T04:22:00Z',
+      ip: '127.0.0.1'
+    }
+  ],
+  notifications: [
+    {
+      id: 'notif-1',
+      title: 'New Prayer Request',
+      message: 'Srinivas Rao has submitted a prayer request regarding his daughter\'s engineering exams.',
+      date: '2026-07-18T10:30:00Z',
+      isRead: false,
+      type: 'prayer'
+    },
+    {
+      id: 'notif-2',
+      title: 'New Contact Inquiry',
+      message: 'David Prasad sent a query about volunteering for Ponnavaram Crusades.',
+      date: '2026-07-19T02:00:00Z',
+      isRead: false,
+      type: 'contact'
+    }
+  ],
+  newsletters: []
+};
+
+// Singleton Database Manager
+class DbManager {
+  private cache: ChurchDatabase | null = null;
+
+  private load(): ChurchDatabase {
+    if (this.cache) return this.cache;
+    
+    if (!fs.existsSync(DB_FILE)) {
+      this.save(INITIAL_DB);
+      return INITIAL_DB;
+    }
+
+    try {
+      const data = fs.readFileSync(DB_FILE, 'utf8');
+      this.cache = JSON.parse(data);
+      return this.cache!;
+    } catch (e) {
+      console.error('Error reading JSON database, resetting to initial seed.', e);
+      this.save(INITIAL_DB);
+      return INITIAL_DB;
+    }
+  }
+
+  private save(data: ChurchDatabase) {
+    this.cache = data;
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+  }
+
+  public getDatabase(): ChurchDatabase {
+    return this.load();
+  }
+
+  public getSettings(): ChurchSettings {
+    return this.load().settings;
+  }
+
+  public updateSettings(settings: Partial<ChurchSettings>): ChurchSettings {
+    const db = this.load();
+    db.settings = { ...db.settings, ...settings };
+    this.save(db);
+    this.logActivity('admin', 'Updated church website settings');
+    return db.settings;
+  }
+
+  public getPastor(): PastorDetails {
+    return this.load().pastor;
+  }
+
+  public updatePastor(pastor: Partial<PastorDetails>): PastorDetails {
+    const db = this.load();
+    db.pastor = { ...db.pastor, ...pastor };
+    this.save(db);
+    this.logActivity('admin', 'Updated Pastor biographical details and social channels');
+    return db.pastor;
+  }
+
+  public getMinistries(): Ministry[] {
+    return this.load().ministries;
+  }
+
+  public updateMinistry(id: string, ministryData: Partial<Ministry>): Ministry {
+    const db = this.load();
+    const index = db.ministries.findIndex(m => m.id === id);
+    if (index !== -1) {
+      db.ministries[index] = { ...db.ministries[index], ...ministryData };
+      this.save(db);
+      this.logActivity('admin', `Updated details for ${db.ministries[index].name.en}`);
+      return db.ministries[index];
+    }
+    throw new Error('Ministry not found');
+  }
+
+  public getSermons(): Sermon[] {
+    return this.load().sermons;
+  }
+
+  public addSermon(sermon: Omit<Sermon, 'id'>): Sermon {
+    const db = this.load();
+    const newSermon: Sermon = {
+      ...sermon,
+      id: `sermon-${Date.now()}`
+    };
+    db.sermons.unshift(newSermon);
+    this.save(db);
+    this.logActivity('admin', `Uploaded new sermon: ${sermon.title.en}`);
+    return newSermon;
+  }
+
+  public updateSermon(id: string, sermonData: Partial<Sermon>): Sermon {
+    const db = this.load();
+    const index = db.sermons.findIndex(s => s.id === id);
+    if (index !== -1) {
+      db.sermons[index] = { ...db.sermons[index], ...sermonData };
+      this.save(db);
+      this.logActivity('admin', `Updated sermon: ${db.sermons[index].title.en}`);
+      return db.sermons[index];
+    }
+    throw new Error('Sermon not found');
+  }
+
+  public deleteSermon(id: string): boolean {
+    const db = this.load();
+    const initialLength = db.sermons.length;
+    db.sermons = db.sermons.filter(s => s.id !== id);
+    if (db.sermons.length < initialLength) {
+      this.save(db);
+      this.logActivity('admin', `Deleted sermon ID: ${id}`);
+      return true;
+    }
+    return false;
+  }
+
+  public getEvents(): Event[] {
+    return this.load().events;
+  }
+
+  public addEvent(event: Omit<Event, 'id' | 'isPast' | 'registrationCount'>): Event {
+    const db = this.load();
+    const newEvent: Event = {
+      ...event,
+      id: `event-${Date.now()}`,
+      isPast: new Date(event.date) < new Date(),
+      registrationCount: 0
+    };
+    db.events.unshift(newEvent);
+    this.save(db);
+    this.logActivity('admin', `Created new event: ${event.title.en}`);
+    return newEvent;
+  }
+
+  public updateEvent(id: string, eventData: Partial<Event>): Event {
+    const db = this.load();
+    const index = db.events.findIndex(e => e.id === id);
+    if (index !== -1) {
+      db.events[index] = { ...db.events[index], ...eventData };
+      // Refresh past/future flag
+      if (db.events[index].date) {
+        db.events[index].isPast = new Date(db.events[index].date) < new Date();
+      }
+      this.save(db);
+      this.logActivity('admin', `Updated event: ${db.events[index].title.en}`);
+      return db.events[index];
+    }
+    throw new Error('Event not found');
+  }
+
+  public deleteEvent(id: string): boolean {
+    const db = this.load();
+    const initialLength = db.events.length;
+    db.events = db.events.filter(e => e.id !== id);
+    if (db.events.length < initialLength) {
+      this.save(db);
+      this.logActivity('admin', `Deleted event ID: ${id}`);
+      return true;
+    }
+    return false;
+  }
+
+  public registerForEvent(eventId: string): number {
+    const db = this.load();
+    const event = db.events.find(e => e.id === eventId);
+    if (event) {
+      event.registrationCount = (event.registrationCount || 0) + 1;
+      this.save(db);
+      this.addNotification('New Event Registration', `Someone registered for event: ${event.title.en}`, 'registration');
+      return event.registrationCount;
+    }
+    throw new Error('Event not found');
+  }
+
+  public getGallery(): GalleryItem[] {
+    return this.load().gallery;
+  }
+
+  public addGalleryItem(item: Omit<GalleryItem, 'id'>): GalleryItem {
+    const db = this.load();
+    const newItem: GalleryItem = {
+      ...item,
+      id: `gal-${Date.now()}`
+    };
+    db.gallery.unshift(newItem);
+    this.save(db);
+    this.logActivity('admin', 'Added a new multimedia asset to gallery');
+    return newItem;
+  }
+
+  public deleteGalleryItem(id: string): boolean {
+    const db = this.load();
+    const initialLength = db.gallery.length;
+    db.gallery = db.gallery.filter(item => item.id !== id);
+    if (db.gallery.length < initialLength) {
+      this.save(db);
+      this.logActivity('admin', `Deleted gallery item ID: ${id}`);
+      return true;
+    }
+    return false;
+  }
+
+  public getTestimonials(): Testimonial[] {
+    return this.load().testimonials;
+  }
+
+  public addTestimonial(testimonial: Omit<Testimonial, 'id' | 'isApproved' | 'date'>): Testimonial {
+    const db = this.load();
+    const newTestimonial: Testimonial = {
+      ...testimonial,
+      id: `test-${Date.now()}`,
+      isApproved: false, // requires admin approval
+      date: new Date().toISOString().split('T')[0]
+    };
+    db.testimonials.unshift(newTestimonial);
+    this.save(db);
+    return newTestimonial;
+  }
+
+  public approveTestimonial(id: string, isApproved: boolean): Testimonial {
+    const db = this.load();
+    const index = db.testimonials.findIndex(t => t.id === id);
+    if (index !== -1) {
+      db.testimonials[index].isApproved = isApproved;
+      this.save(db);
+      this.logActivity('admin', `${isApproved ? 'Approved' : 'Disapproved'} testimonial from ${db.testimonials[index].name}`);
+      return db.testimonials[index];
+    }
+    throw new Error('Testimonial not found');
+  }
+
+  public deleteTestimonial(id: string): boolean {
+    const db = this.load();
+    const initialLength = db.testimonials.length;
+    db.testimonials = db.testimonials.filter(t => t.id !== id);
+    if (db.testimonials.length < initialLength) {
+      this.save(db);
+      this.logActivity('admin', `Deleted testimonial ID: ${id}`);
+      return true;
+    }
+    return false;
+  }
+
+  public getPrayerRequests(): PrayerRequest[] {
+    return this.load().prayerRequests;
+  }
+
+  public addPrayerRequest(request: Omit<PrayerRequest, 'id' | 'status' | 'date'>): PrayerRequest {
+    const db = this.load();
+    const newRequest: PrayerRequest = {
+      ...request,
+      id: `pray-${Date.now()}`,
+      status: 'Pending',
+      date: new Date().toISOString()
+    };
+    db.prayerRequests.unshift(newRequest);
+    this.save(db);
+    this.addNotification('New Prayer Request', `${request.name} has submitted a new prayer request.`, 'prayer');
+    return newRequest;
+  }
+
+  public updatePrayerStatus(id: string, status: 'Pending' | 'Praying' | 'Answered'): PrayerRequest {
+    const db = this.load();
+    const index = db.prayerRequests.findIndex(p => p.id === id);
+    if (index !== -1) {
+      db.prayerRequests[index].status = status;
+      this.save(db);
+      this.logActivity('admin', `Updated prayer request status for ${db.prayerRequests[index].name} to: ${status}`);
+      return db.prayerRequests[index];
+    }
+    throw new Error('Prayer request not found');
+  }
+
+  public deletePrayerRequest(id: string): boolean {
+    const db = this.load();
+    const initialLength = db.prayerRequests.length;
+    db.prayerRequests = db.prayerRequests.filter(p => p.id !== id);
+    if (db.prayerRequests.length < initialLength) {
+      this.save(db);
+      this.logActivity('admin', `Deleted prayer request ID: ${id}`);
+      return true;
+    }
+    return false;
+  }
+
+  public getContactMessages(): ContactMessage[] {
+    return this.load().contactMessages;
+  }
+
+  public addContactMessage(msg: Omit<ContactMessage, 'id' | 'date' | 'isRead'>): ContactMessage {
+    const db = this.load();
+    const newMsg: ContactMessage = {
+      ...msg,
+      id: `con-${Date.now()}`,
+      date: new Date().toISOString(),
+      isRead: false
+    };
+    db.contactMessages.unshift(newMsg);
+    this.save(db);
+    this.addNotification('New Contact Message', `You received a message from ${msg.name}.`, 'contact');
+    return newMsg;
+  }
+
+  public markContactAsRead(id: string, isRead: boolean): ContactMessage {
+    const db = this.load();
+    const index = db.contactMessages.findIndex(m => m.id === id);
+    if (index !== -1) {
+      db.contactMessages[index].isRead = isRead;
+      this.save(db);
+      return db.contactMessages[index];
+    }
+    throw new Error('Contact message not found');
+  }
+
+  public deleteContactMessage(id: string): boolean {
+    const db = this.load();
+    const initialLength = db.contactMessages.length;
+    db.contactMessages = db.contactMessages.filter(m => m.id !== id);
+    if (db.contactMessages.length < initialLength) {
+      this.save(db);
+      this.logActivity('admin', `Deleted contact message ID: ${id}`);
+      return true;
+    }
+    return false;
+  }
+
+  public getDonations(): DonationRecord[] {
+    return this.load().donations;
+  }
+
+  public addDonationRecord(donation: Omit<DonationRecord, 'id' | 'date' | 'status'>): DonationRecord {
+    const db = this.load();
+    const newDonation: DonationRecord = {
+      ...donation,
+      id: `don-${Date.now()}`,
+      date: new Date().toISOString(),
+      status: 'Completed' // Pre-completed in QR code / UPI logs simulation
+    };
+    db.donations.unshift(newDonation);
+    this.save(db);
+    this.addNotification('Blessed Donation Received', `A dynamic offering of ₹${donation.amount} received from ${donation.donorName || 'Anonymous'}.`, 'donation');
+    return newDonation;
+  }
+
+  public deleteDonation(id: string): boolean {
+    const db = this.load();
+    const initialLength = db.donations.length;
+    db.donations = db.donations.filter(d => d.id !== id);
+    if (db.donations.length < initialLength) {
+      this.save(db);
+      this.logActivity('admin', `Deleted donation record ID: ${id}`);
+      return true;
+    }
+    return false;
+  }
+
+  public getActivityLogs(): ActivityLog[] {
+    return this.load().activityLogs;
+  }
+
+  public logActivity(user: string, action: string, ip?: string) {
+    const db = this.load();
+    const newLog: ActivityLog = {
+      id: `log-${Date.now()}`,
+      user,
+      action,
+      date: new Date().toISOString(),
+      ip: ip || '127.0.0.1'
+    };
+    db.activityLogs.unshift(newLog);
+    // Keep logs within last 500 records
+    if (db.activityLogs.length > 500) {
+      db.activityLogs.pop();
+    }
+    this.save(db);
+  }
+
+  public getNotifications(): Notification[] {
+    return this.load().notifications;
+  }
+
+  public addNotification(title: string, message: string, type: 'prayer' | 'contact' | 'donation' | 'registration') {
+    const db = this.load();
+    const newNotif: Notification = {
+      id: `notif-${Date.now()}`,
+      title,
+      message,
+      date: new Date().toISOString(),
+      isRead: false,
+      type
+    };
+    db.notifications.unshift(newNotif);
+    if (db.notifications.length > 50) {
+      db.notifications.pop();
+    }
+    this.save(db);
+  }
+
+  public markNotificationAsRead(id: string): boolean {
+    const db = this.load();
+    const notif = db.notifications.find(n => n.id === id);
+    if (notif) {
+      notif.isRead = true;
+      this.save(db);
+      return true;
+    }
+    return false;
+  }
+
+  public markAllNotificationsAsRead(): boolean {
+    const db = this.load();
+    db.notifications.forEach(n => n.isRead = true);
+    this.save(db);
+    return true;
+  }
+
+  public getNewsletters(): NewsLetter[] {
+    const db = this.load();
+    if (!db.newsletters) {
+      db.newsletters = [];
+    }
+    return db.newsletters;
+  }
+
+  public addNewsletter(email: string): NewsLetter {
+    const db = this.load();
+    if (!db.newsletters) {
+      db.newsletters = [];
+    }
+    
+    const existing = db.newsletters.find(n => n.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      return existing;
+    }
+
+    const newNewsletter: NewsLetter = {
+      id: `newsletter-${Date.now()}`,
+      email: email,
+      date: new Date().toISOString()
+    };
+    db.newsletters.unshift(newNewsletter);
+    this.save(db);
+    this.logActivity('system', `New newsletter subscription: ${email}`);
+    return newNewsletter;
+  }
+}
+
+export const dbManager = new DbManager();
+export default dbManager;
