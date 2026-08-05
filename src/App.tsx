@@ -62,7 +62,7 @@ export default function App() {
 
   // Fetch all initial data on mount
   useEffect(() => {
-    fetchInitialData();
+    console.log('fetching initial data...'); fetchInitialData();
   }, []);
 
   // Auto-login bypass to remove password and username prompts
@@ -76,19 +76,66 @@ export default function App() {
 
   const fetchInitialData = async () => {
     try {
-      const [resSettings, resMinistries, resSermons, resEvents, resGallery] = await Promise.all([
-        fetch('/api/settings'),
-        fetch('/api/ministries'),
-        fetch('/api/sermons'),
-        fetch('/api/events'),
-        fetch('/api/gallery')
+      const fetchJson = async (url) => {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            return data;
+          }
+        } catch (e) {
+          console.error('Fetch error for', url, e);
+        }
+        return null;
+      };
+
+      const [settingsData, ministriesData, sermonsData, eventsData, galleryData] = await Promise.all([
+        fetchJson('/api/settings'),
+        fetchJson('/api/ministries'),
+        fetchJson('/api/sermons'),
+        fetchJson('/api/events'),
+        fetchJson('/api/gallery')
       ]);
 
-      if (resSettings.ok) setSettings(await resSettings.json());
-      if (resMinistries.ok) setMinistries(await resMinistries.json());
-      if (resSermons.ok) setSermons(await resSermons.json());
-      if (resEvents.ok) setEvents(await resEvents.json());
-      if (resGallery.ok) setGallery(await resGallery.json());
+      if (settingsData) setSettings(settingsData);
+      else {
+        // Fallback to prevent eternal loading
+        setSettings({
+          churchName: { en: "Jesus Shalem Ministries", te: "యేసు శాలేము మినిస్ట్రీస్" },
+          pastorName: { en: "Pastor Mande. SHALEM RAJU", te: "పాస్టర్ మందే. శాలేము రాజు" },
+          phone: "+91 7981788313",
+          email: "JesusShalemMinistries@gmail.com",
+          address: { en: "Ponnavaram", te: "పొన్నవరం" },
+          instagram: "jesus_shalem_ministries",
+          instagramLink: "https://www.instagram.com/jesus_shalem_ministries?igsh=ajljZjB1NnB3ZXBi",
+          whatsappName: "Jesus Shalem Ministries",
+          whatsappLink: "https://whatsapp.com/channel/0029VbDHZ7XISTkF4bpo6P1q",
+          youtubeName: "Jesus Shalem Ministries",
+          youtubeLink: "https://youtube.com/@jesusshalemministries?si=m7OCOrD0zA2R6LLk",
+          logoUrl: "/src/assets/images/church_logo_new_1784635370468.jpg",
+          heroBannerUrl: "/src/assets/images/church_building_new_1784636792290.jpg",
+          pastorPortraitUrl: "/uploads/image-1785906876231-728335918.jpg",
+          pastorPortraitWidthHome: "260px",
+          pastorPortraitHeightHome: "280px",
+          pastorPortraitHeightBio: "380px",
+          heroSliderHeight: "85vh",
+          bibleVerse: { verse: { en: "", te: "" }, reference: { en: "", te: "" } },
+          mission: { en: "", te: "" },
+          vision: { en: "", te: "" },
+          donationUpi: "",
+          donationQrCode: "",
+          bankDetails: { bankName: "", accountName: "", accountNumber: "", ifscCode: "", branch: "" },
+          seoKeywords: "",
+          seoDescription: "",
+          footerText: { en: "", te: "" },
+          aboutHistory: { en: "", te: "" }
+        });
+      }
+
+      if (ministriesData) setMinistries(ministriesData);
+      if (sermonsData) setSermons(sermonsData);
+      if (eventsData) setEvents(eventsData);
+      if (galleryData) setGallery(galleryData);
 
     } catch (err) {
       console.error('Error fetching initial database content:', err);
@@ -99,7 +146,7 @@ export default function App() {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAdminError('');
-    try {
+    try { console.log('Starting fetch...');
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,7 +183,7 @@ export default function App() {
     if (!newsletterEmail.trim()) return;
 
     setIsSubscribing(true);
-    try {
+    try { console.log('Starting fetch...');
       const response = await fetch('/api/newsletters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
