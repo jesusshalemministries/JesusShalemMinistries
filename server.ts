@@ -9,7 +9,7 @@ import { dbManager } from './server/db';
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Setup static file serving for uploads

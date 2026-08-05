@@ -116,36 +116,25 @@ export default function AdminPanel({
   };
 
   const handleImageUpload = async (file: File): Promise<string | null> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    try {
+    return new Promise((resolve) => {
       setIsSaving(true);
-      setSaveStatus('Uploading image...');
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSaveStatus('Image uploaded!');
+      setSaveStatus('Processing image...');
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSaveStatus('Image processed!');
         setTimeout(() => setSaveStatus(null), 2000);
-        return data.url;
-      } else {
-        const err = await res.json();
-        setSaveStatus('Upload failed: ' + (err.error || 'Unknown error'));
+        setIsSaving(false);
+        resolve(e.target?.result as string);
+      };
+      reader.onerror = (e) => {
+        setSaveStatus('Image processing failed');
         setTimeout(() => setSaveStatus(null), 3000);
-        return null;
-      }
-    } catch (e: any) {
-      setSaveStatus('Upload error: ' + e.message);
-      setTimeout(() => setSaveStatus(null), 3000);
-      return null;
-    } finally {
-      setIsSaving(false);
-    }
+        setIsSaving(false);
+        resolve(null);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const fetchNewsletters = async () => {
@@ -872,29 +861,9 @@ export default function AdminPanel({
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const formData = new FormData();
-                          formData.append('image', file);
-                          
-                          setIsSaving(true);
-                          setSaveStatus('Uploading QR code...');
-                          try {
-                            const res = await fetch('/api/upload', {
-                              method: 'POST',
-                              headers: { 'Authorization': `Bearer ${token}` },
-                              body: formData,
-                            });
-                            if (res.ok) {
-                              const data = await res.json();
-                              setLocalSettings({ ...localSettings, donationQrCode: data.url });
-                              setSaveStatus('QR Code uploaded!');
-                              setTimeout(() => setSaveStatus(null), 2000);
-                            }
-                          } catch (err) {
-                            console.error(err);
-                            setSaveStatus(err instanceof Error ? err.message : 'Upload failed');
-                            setTimeout(() => setSaveStatus(null), 2000);
-                          } finally {
-                            setIsSaving(false);
+                          const url = await handleImageUpload(file);
+                          if (url) {
+                            setLocalSettings({ ...localSettings, donationQrCode: url });
                           }
                         }
                       }}
@@ -1459,28 +1428,9 @@ export default function AdminPanel({
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const formData = new FormData();
-                            formData.append('image', file);
-                            setIsSaving(true);
-                            setSaveStatus('Uploading media...');
-                            try {
-                              const res = await fetch('/api/upload', {
-                                method: 'POST',
-                                headers: { 'Authorization': `Bearer ${token}` },
-                                body: formData,
-                              });
-                              if (res.ok) {
-                                const data = await res.json();
-                                setGalleryForm({ ...galleryForm, url: data.url });
-                                setSaveStatus('Media uploaded!');
-                                setTimeout(() => setSaveStatus(null), 2000);
-                              }
-                            } catch (err) {
-                              console.error(err);
-                              setSaveStatus(err instanceof Error ? err.message : 'Upload failed');
-                              setTimeout(() => setSaveStatus(null), 2000);
-                            } finally {
-                              setIsSaving(false);
+                            const url = await handleImageUpload(file);
+                            if (url) {
+                              setGalleryForm({ ...galleryForm, url: url });
                             }
                           }
                         }}
