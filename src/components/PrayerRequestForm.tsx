@@ -152,7 +152,7 @@ export default function PrayerRequestForm({ currentLanguage }: PrayerRequestForm
                         type="text"
                         required
                         placeholder="e.g., Srinivas Rao"
-                        value={formData.name}
+                        value={formData.name || ''}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full bg-black border border-neutral-800 text-white rounded px-4 py-3.5 text-xs focus:outline-none focus:border-[#D4AF37] transition font-sans"
                       />
@@ -168,7 +168,7 @@ export default function PrayerRequestForm({ currentLanguage }: PrayerRequestForm
                         type="tel"
                         required
                         placeholder="e.g., +91 98480xxxxx"
-                        value={formData.phone}
+                        value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className="w-full bg-black border border-neutral-800 text-white rounded px-4 py-3.5 text-xs focus:outline-none focus:border-[#D4AF37] transition font-sans"
                       />
@@ -184,7 +184,7 @@ export default function PrayerRequestForm({ currentLanguage }: PrayerRequestForm
                       id="prayer_email"
                       type="email"
                       placeholder="e.g., srinivas.rao@gmail.com"
-                      value={formData.email}
+                      value={formData.email || ''}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full bg-black border border-neutral-800 text-white rounded px-4 py-3.5 text-xs focus:outline-none focus:border-[#D4AF37] transition font-sans"
                     />
@@ -200,7 +200,7 @@ export default function PrayerRequestForm({ currentLanguage }: PrayerRequestForm
                       rows={5}
                       required
                       placeholder={t.placeholderRequest}
-                      value={formData.request}
+                      value={formData.request || ''}
                       onChange={(e) => setFormData({ ...formData, request: e.target.value })}
                       className="w-full bg-black border border-neutral-800 text-white rounded px-4 py-3.5 text-xs focus:outline-none focus:border-[#D4AF37] transition font-sans resize-none"
                     />

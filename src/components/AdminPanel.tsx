@@ -60,6 +60,7 @@ export default function AdminPanel({
     location: { en: '', te: '' },
     description: { en: '', te: '' },
     date: '',
+    imageUrl: '',
     isPast: false
   });
 
@@ -99,6 +100,39 @@ export default function AdminPanel({
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleImageUpload = async (file: File): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      setIsSaving(true);
+      setSaveStatus('Uploading image...');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSaveStatus('Image uploaded!');
+        setTimeout(() => setSaveStatus(null), 2000);
+        return data.url;
+      } else {
+        const err = await res.json();
+        setSaveStatus('Upload failed: ' + (err.error || 'Unknown error'));
+        setTimeout(() => setSaveStatus(null), 3000);
+        return null;
+      }
+    } catch (e: any) {
+      setSaveStatus('Upload error: ' + e.message);
+      setTimeout(() => setSaveStatus(null), 3000);
+      return null;
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -257,6 +291,7 @@ export default function AdminPanel({
           location: { en: '', te: '' },
           description: { en: '', te: '' },
           date: '',
+          imageUrl: '',
           isPast: false
         });
         showStatus('Crusade Events updated! ✓');
@@ -426,7 +461,7 @@ export default function AdminPanel({
                     id="settings_name_en"
                     type="text"
                     required
-                    value={localSettings.churchName.en}
+                    value={localSettings.churchName.en || ''}
                     onChange={(e) => setLocalSettings({
                       ...localSettings,
                       churchName: { ...localSettings.churchName, en: e.target.value }
@@ -442,7 +477,7 @@ export default function AdminPanel({
                     id="settings_name_te"
                     type="text"
                     required
-                    value={localSettings.churchName.te}
+                    value={localSettings.churchName.te || ''}
                     onChange={(e) => setLocalSettings({
                       ...localSettings,
                       churchName: { ...localSettings.churchName, te: e.target.value }
@@ -458,7 +493,7 @@ export default function AdminPanel({
                     id="settings_pastor_en"
                     type="text"
                     required
-                    value={localSettings.pastorName.en}
+                    value={localSettings.pastorName.en || ''}
                     onChange={(e) => setLocalSettings({
                       ...localSettings,
                       pastorName: { ...localSettings.pastorName, en: e.target.value }
@@ -474,7 +509,7 @@ export default function AdminPanel({
                     id="settings_pastor_te"
                     type="text"
                     required
-                    value={localSettings.pastorName.te}
+                    value={localSettings.pastorName.te || ''}
                     onChange={(e) => setLocalSettings({
                       ...localSettings,
                       pastorName: { ...localSettings.pastorName, te: e.target.value }
@@ -490,7 +525,7 @@ export default function AdminPanel({
                     id="settings_phone"
                     type="text"
                     required
-                    value={localSettings.contactPhone}
+                    value={localSettings.contactPhone || ''}
                     onChange={(e) => setLocalSettings({ ...localSettings, contactPhone: e.target.value })}
                     className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs focus:outline-none focus:border-[#D4AF37]"
                   />
@@ -503,7 +538,7 @@ export default function AdminPanel({
                     id="settings_email"
                     type="email"
                     required
-                    value={localSettings.contactEmail}
+                    value={localSettings.contactEmail || ''}
                     onChange={(e) => setLocalSettings({ ...localSettings, contactEmail: e.target.value })}
                     className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs focus:outline-none focus:border-[#D4AF37]"
                   />
@@ -519,17 +554,35 @@ export default function AdminPanel({
                   {/* Church Image URL */}
                   <div className="space-y-1">
                     <label htmlFor="settings_hero_url" className="block text-[9px] font-mono text-neutral-400 uppercase">Church Image URL (Hero Slider)</label>
-                    <input
-                      id="settings_hero_url"
-                      type="text"
-                      required
-                      value={localSettings.heroBannerUrl}
-                      onChange={(e) => setLocalSettings({
-                        ...localSettings,
-                        heroBannerUrl: e.target.value
-                      })}
-                      className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs focus:outline-none focus:border-[#D4AF37]"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        id="settings_hero_url"
+                        type="text"
+                        required
+                        value={localSettings.heroBannerUrl || ''}
+                        onChange={(e) => setLocalSettings({
+                          ...localSettings,
+                          heroBannerUrl: e.target.value
+                        })}
+                        className="flex-1 bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs focus:outline-none focus:border-[#D4AF37]"
+                      />
+                      <label className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-3 rounded text-xs cursor-pointer flex items-center justify-center">
+                        Upload
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={async (e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const url = await handleImageUpload(e.target.files[0]);
+                              if (url) {
+                                setLocalSettings({ ...localSettings, heroBannerUrl: url });
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   {/* Church Image Height */}
@@ -537,7 +590,7 @@ export default function AdminPanel({
                     <label htmlFor="settings_hero_height" className="block text-[9px] font-mono text-neutral-400 uppercase">Church Image Height (Hero Slider)</label>
                     <select
                       id="settings_hero_height"
-                      value={localSettings.heroSliderHeight}
+                      value={localSettings.heroSliderHeight || ''}
                       onChange={(e) => setLocalSettings({
                         ...localSettings,
                         heroSliderHeight: e.target.value
@@ -556,17 +609,35 @@ export default function AdminPanel({
                   {/* Pastor Image URL */}
                   <div className="space-y-1">
                     <label htmlFor="settings_pastor_url" className="block text-[9px] font-mono text-neutral-400 uppercase">Pastor Image URL (Portrait)</label>
-                    <input
-                      id="settings_pastor_url"
-                      type="text"
-                      required
-                      value={localSettings.pastorPortraitUrl}
-                      onChange={(e) => setLocalSettings({
-                        ...localSettings,
-                        pastorPortraitUrl: e.target.value
-                      })}
-                      className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs focus:outline-none focus:border-[#D4AF37]"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        id="settings_pastor_url"
+                        type="text"
+                        required
+                        value={localSettings.pastorPortraitUrl || ''}
+                        onChange={(e) => setLocalSettings({
+                          ...localSettings,
+                          pastorPortraitUrl: e.target.value
+                        })}
+                        className="flex-1 bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs focus:outline-none focus:border-[#D4AF37]"
+                      />
+                      <label className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-3 rounded text-xs cursor-pointer flex items-center justify-center">
+                        Upload
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={async (e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const url = await handleImageUpload(e.target.files[0]);
+                              if (url) {
+                                setLocalSettings({ ...localSettings, pastorPortraitUrl: url });
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   {/* Pastor Image Sizes */}
@@ -578,7 +649,7 @@ export default function AdminPanel({
                         <input
                           type="text"
                           required
-                          value={localSettings.pastorPortraitWidthHome}
+                          value={localSettings.pastorPortraitWidthHome || ''}
                           onChange={(e) => setLocalSettings({
                             ...localSettings,
                             pastorPortraitWidthHome: e.target.value
@@ -592,7 +663,7 @@ export default function AdminPanel({
                         <input
                           type="text"
                           required
-                          value={localSettings.pastorPortraitHeightHome}
+                          value={localSettings.pastorPortraitHeightHome || ''}
                           onChange={(e) => setLocalSettings({
                             ...localSettings,
                             pastorPortraitHeightHome: e.target.value
@@ -606,7 +677,7 @@ export default function AdminPanel({
                         <input
                           type="text"
                           required
-                          value={localSettings.pastorPortraitHeightBio}
+                          value={localSettings.pastorPortraitHeightBio || ''}
                           onChange={(e) => setLocalSettings({
                             ...localSettings,
                             pastorPortraitHeightBio: e.target.value
@@ -630,7 +701,7 @@ export default function AdminPanel({
                     <textarea
                       id="verse_en"
                       rows={2}
-                      value={localSettings.bibleVerse.verse.en}
+                      value={localSettings.bibleVerse.verse.en || ''}
                       onChange={(e) => setLocalSettings({
                         ...localSettings,
                         bibleVerse: {
@@ -646,7 +717,7 @@ export default function AdminPanel({
                     <input
                       id="verse_ref_en"
                       type="text"
-                      value={localSettings.bibleVerse.reference.en}
+                      value={localSettings.bibleVerse.reference.en || ''}
                       onChange={(e) => setLocalSettings({
                         ...localSettings,
                         bibleVerse: {
@@ -702,7 +773,7 @@ export default function AdminPanel({
                       id="min_name_en"
                       type="text"
                       required
-                      value={minEdit.name.en}
+                      value={minEdit.name.en || ''}
                       onChange={(e) => setMinEdit({ ...minEdit, name: { ...minEdit.name, en: e.target.value } })}
                       className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs"
                     />
@@ -715,7 +786,7 @@ export default function AdminPanel({
                       id="min_name_te"
                       type="text"
                       required
-                      value={minEdit.name.te}
+                      value={minEdit.name.te || ''}
                       onChange={(e) => setMinEdit({ ...minEdit, name: { ...minEdit.name, te: e.target.value } })}
                       className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs"
                     />
@@ -724,14 +795,32 @@ export default function AdminPanel({
                   {/* Image URL */}
                   <div className="space-y-1 sm:col-span-2">
                     <label htmlFor="min_image" className="block text-[10px] font-mono text-[#D4AF37] uppercase">Ministry Image URL</label>
-                    <input
-                      id="min_image"
-                      type="text"
-                      required
-                      value={minEdit.imageUrl}
-                      onChange={(e) => setMinEdit({ ...minEdit, imageUrl: e.target.value })}
-                      className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs font-mono"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        id="min_image"
+                        type="text"
+                        required
+                        value={minEdit.imageUrl || ''}
+                        onChange={(e) => setMinEdit({ ...minEdit, imageUrl: e.target.value })}
+                        className="flex-1 bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs font-mono"
+                      />
+                      <label className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-3 rounded text-xs cursor-pointer flex items-center justify-center">
+                        Upload
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={async (e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const url = await handleImageUpload(e.target.files[0]);
+                              if (url) {
+                                setMinEdit({ ...minEdit, imageUrl: url });
+                              }
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   {/* Devotional Content EN */}
@@ -740,7 +829,7 @@ export default function AdminPanel({
                     <textarea
                       id="min_content_en"
                       rows={4}
-                      value={minEdit.content.en}
+                      value={minEdit.content.en || ''}
                       onChange={(e) => setMinEdit({ ...minEdit, content: { ...minEdit.content, en: e.target.value } })}
                       className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs"
                     />
@@ -752,7 +841,7 @@ export default function AdminPanel({
                     <textarea
                       id="min_content_te"
                       rows={4}
-                      value={minEdit.content.te}
+                      value={minEdit.content.te || ''}
                       onChange={(e) => setMinEdit({ ...minEdit, content: { ...minEdit.content, te: e.target.value } })}
                       className="w-full bg-[#141414] border border-neutral-800 rounded px-4 py-3 text-xs"
                     />
@@ -793,7 +882,7 @@ export default function AdminPanel({
                       id="form_sermon_title_en"
                       type="text"
                       required
-                      value={sermonForm.title?.en}
+                      value={sermonForm.title?.en || ''}
                       onChange={(e) => setSermonForm({
                         ...sermonForm,
                         title: { ...sermonForm.title!, en: e.target.value }
@@ -809,7 +898,7 @@ export default function AdminPanel({
                       id="form_sermon_title_te"
                       type="text"
                       required
-                      value={sermonForm.title?.te}
+                      value={sermonForm.title?.te || ''}
                       onChange={(e) => setSermonForm({
                         ...sermonForm,
                         title: { ...sermonForm.title!, te: e.target.value }
@@ -825,7 +914,7 @@ export default function AdminPanel({
                       id="form_sermon_speaker_en"
                       type="text"
                       required
-                      value={sermonForm.speaker?.en}
+                      value={sermonForm.speaker?.en || ''}
                       onChange={(e) => setSermonForm({
                         ...sermonForm,
                         speaker: { ...sermonForm.speaker!, en: e.target.value }
@@ -842,7 +931,7 @@ export default function AdminPanel({
                       type="text"
                       required
                       placeholder="e.g., pGvHMyo_r60"
-                      value={sermonForm.youtubeId}
+                      value={sermonForm.youtubeId || ''}
                       onChange={(e) => setSermonForm({ ...sermonForm, youtubeId: e.target.value })}
                       className="w-full bg-black border border-neutral-800 rounded p-2 text-xs font-mono"
                     />
@@ -961,7 +1050,7 @@ export default function AdminPanel({
                       id="form_event_title_en"
                       type="text"
                       required
-                      value={eventForm.title?.en}
+                      value={eventForm.title?.en || ''}
                       onChange={(e) => setEventForm({
                         ...eventForm,
                         title: { ...eventForm.title!, en: e.target.value }
@@ -977,7 +1066,7 @@ export default function AdminPanel({
                       id="form_event_title_te"
                       type="text"
                       required
-                      value={eventForm.title?.te}
+                      value={eventForm.title?.te || ''}
                       onChange={(e) => setEventForm({
                         ...eventForm,
                         title: { ...eventForm.title!, te: e.target.value }
@@ -993,7 +1082,7 @@ export default function AdminPanel({
                       id="form_event_location"
                       type="text"
                       required
-                      value={eventForm.location?.en}
+                      value={eventForm.location?.en || ''}
                       onChange={(e) => setEventForm({
                         ...eventForm,
                         location: { ...eventForm.location!, en: e.target.value }
@@ -1009,7 +1098,7 @@ export default function AdminPanel({
                       id="form_event_date"
                       type="datetime-local"
                       required
-                      value={eventForm.date}
+                      value={eventForm.date || ''}
                       onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
                       className="w-full bg-black border border-neutral-800 rounded p-2 text-xs font-mono"
                     />
@@ -1022,7 +1111,7 @@ export default function AdminPanel({
                       id="form_event_desc"
                       rows={3}
                       required
-                      value={eventForm.description?.en}
+                      value={eventForm.description?.en || ''}
                       onChange={(e) => setEventForm({
                         ...eventForm,
                         description: { ...eventForm.description!, en: e.target.value }
@@ -1033,7 +1122,36 @@ export default function AdminPanel({
 
                 </div>
 
-                <div className="flex justify-end space-x-2 pt-2">
+                <div className="space-y-1 mt-4">
+                  <label htmlFor="form_event_image" className="block text-[9px] font-mono text-neutral-400">Event Image URL</label>
+                  <div className="flex gap-2">
+                    <input
+                      id="form_event_image"
+                      type="text"
+                      value={eventForm.imageUrl || ''}
+                      onChange={(e) => setEventForm({ ...eventForm, imageUrl: e.target.value })}
+                      className="flex-1 bg-black border border-neutral-800 rounded p-2 text-xs"
+                    />
+                    <label className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded text-xs cursor-pointer flex items-center justify-center">
+                      Upload
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={async (e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const url = await handleImageUpload(e.target.files[0]);
+                            if (url) {
+                              setEventForm({ ...eventForm, imageUrl: url });
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4">
                   {editingEventId && (
                     <button
                       type="button"
@@ -1044,6 +1162,7 @@ export default function AdminPanel({
                           location: { en: '', te: '' },
                           description: { en: '', te: '' },
                           date: '',
+                          imageUrl: '',
                           isPast: false
                         });
                       }}

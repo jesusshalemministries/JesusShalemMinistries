@@ -224,7 +224,7 @@ export default function EventsView({ currentLanguage, events, onEventRegistered 
                               type="text"
                               required
                               placeholder={t.placeholderName}
-                              value={formData.name}
+                              value={formData.name || ''}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                               className="w-full bg-[#141414] border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]"
                             />
@@ -232,14 +232,14 @@ export default function EventsView({ currentLanguage, events, onEventRegistered 
                               type="tel"
                               required
                               placeholder={t.placeholderPhone}
-                              value={formData.phone}
+                              value={formData.phone || ''}
                               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                               className="w-full bg-[#141414] border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]"
                             />
                             <input
                               type="email"
                               placeholder={t.placeholderEmail}
-                              value={formData.email}
+                              value={formData.email || ''}
                               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                               className="w-full bg-[#141414] border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]"
                             />

@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import multer from 'multer';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import { dbManager } from './server/db';
@@ -11,6 +12,31 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Setup static file serving for uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+
+// Setup Multer for image uploads
+const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  },
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
+
 // Admin session storage (In-memory simulation)
 const ACTIVE_SESSIONS = new Set<string>();
 const ADMIN_USERNAME = 'admin';
@@ -18,7 +44,8 @@ const ADMIN_PASSWORD = 'shalem123';
 
 // Auth Middleware
 function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const token = req.headers.authorization;
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
   if (token && (ACTIVE_SESSIONS.has(token) || token === 'jsm_direct_access_bypass')) {
     next();
   } else {
@@ -107,7 +134,8 @@ app.post('/api/auth/login', handleAdminLoginRequest);
 app.post('/api/admin/login', handleAdminLoginRequest);
 
 app.post('/api/auth/logout', (req, res) => {
-  const token = req.headers.authorization;
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
   if (token && ACTIVE_SESSIONS.has(token)) {
     ACTIVE_SESSIONS.delete(token);
     dbManager.logActivity('admin', 'Admin logged out successfully', req.ip);
@@ -116,7 +144,8 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 app.get('/api/auth/me', (req, res) => {
-  const token = req.headers.authorization;
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
   if (token && ACTIVE_SESSIONS.has(token)) {
     res.json({ username: ADMIN_USERNAME });
   } else {
@@ -144,6 +173,16 @@ const handleSettingsUpdate = (req: any, res: any) => {
 
 app.put('/api/settings', requireAdmin, handleSettingsUpdate);
 app.post('/api/settings', requireAdmin, handleSettingsUpdate);
+
+app.post('/api/upload', requireAdmin, upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image uploaded' });
+  }
+  
+  // The file is saved in public/uploads, so the URL should be /uploads/filename
+  const imageUrl = `/uploads/${req.file.filename}`;
+  res.json({ url: imageUrl });
+});
 
 app.get('/api/pastor', (req, res) => {
   res.json(dbManager.getPastor());

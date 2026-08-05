@@ -206,7 +206,7 @@ export default function DonateSection({ currentLanguage }: DonateSectionProps) {
                           type="text"
                           required
                           placeholder="e.g., Brother Srinivas"
-                          value={offeringData.donor}
+                          value={offeringData.donor || ''}
                           onChange={(e) => setOfferingData({ ...offeringData, donor: e.target.value })}
                           className="w-full bg-black border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]"
                         />
@@ -219,7 +219,7 @@ export default function DonateSection({ currentLanguage }: DonateSectionProps) {
                           type="number"
                           required
                           placeholder="e.g., 5000"
-                          value={offeringData.amount}
+                          value={offeringData.amount || ''}
                           onChange={(e) => setOfferingData({ ...offeringData, amount: e.target.value })}
                           className="w-full bg-black border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]"
                         />
@@ -229,7 +229,7 @@ export default function DonateSection({ currentLanguage }: DonateSectionProps) {
                         <label htmlFor="offering_purpose" className="block text-[9px] font-mono text-neutral-400 uppercase">Purpose</label>
                         <select
                           id="offering_purpose"
-                          value={offeringData.purpose}
+                          value={offeringData.purpose || ''}
                           onChange={(e) => setOfferingData({ ...offeringData, purpose: e.target.value })}
                           className="w-full bg-black border border-neutral-800 rounded px-3 py-2 text-xs text-neutral-300 focus:outline-none focus:border-[#D4AF37]"
                         >

@@ -246,7 +246,7 @@ export default function App() {
                           <img
                             src={settings.pastorPortraitUrl}
                             alt="Pastor Mande. Shalem Raju Portrait"
-                            className="w-full h-full object-cover grayscale opacity-85 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
+                            className="w-full h-full object-cover transition-all duration-500"
                             referrerPolicy="no-referrer"
                           />
                         </div>
@@ -590,7 +590,7 @@ export default function App() {
                                   type="text"
                                   required
                                   placeholder="e.g., Sister Grace"
-                                  value={testForm.name}
+                                  value={testForm.name || ''}
                                   onChange={(e) => setTestForm({ ...testForm, name: e.target.value })}
                                   className="w-full bg-[#141414] border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]"
                                 />
@@ -603,7 +603,7 @@ export default function App() {
                                   rows={4}
                                   required
                                   placeholder={t.testimonialPlaceholder}
-                                  value={testForm.description}
+                                  value={testForm.description || ''}
                                   onChange={(e) => setTestForm({ ...testForm, description: e.target.value })}
                                   className="w-full bg-[#141414] border border-neutral-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37] resize-none"
                                 />
@@ -1215,7 +1215,7 @@ export default function App() {
                         id="vis_name"
                         type="text"
                         required
-                        value={visitorForm.name}
+                        value={visitorForm.name || ''}
                         onChange={(e) => setVisitorForm({ ...visitorForm, name: e.target.value })}
                         className="w-full bg-black border border-neutral-800 text-white rounded px-3 py-2 text-xs"
                       />
@@ -1227,7 +1227,7 @@ export default function App() {
                         id="vis_phone"
                         type="tel"
                         required
-                        value={visitorForm.phone}
+                        value={visitorForm.phone || ''}
                         onChange={(e) => setVisitorForm({ ...visitorForm, phone: e.target.value })}
                         className="w-full bg-black border border-neutral-800 text-white rounded px-3 py-2 text-xs"
                       />
@@ -1238,7 +1238,7 @@ export default function App() {
                       <input
                         id="vis_email"
                         type="email"
-                        value={visitorForm.email}
+                        value={visitorForm.email || ''}
                         onChange={(e) => setVisitorForm({ ...visitorForm, email: e.target.value })}
                         className="w-full bg-black border border-neutral-800 text-white rounded px-3 py-2 text-xs"
                       />
