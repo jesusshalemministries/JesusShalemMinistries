@@ -891,7 +891,7 @@ export default function AdminPanel({
                             }
                           } catch (err) {
                             console.error(err);
-                            setSaveStatus('Upload failed');
+                            setSaveStatus(err instanceof Error ? err.message : 'Upload failed');
                             setTimeout(() => setSaveStatus(null), 2000);
                           } finally {
                             setIsSaving(false);
@@ -1477,7 +1477,7 @@ export default function AdminPanel({
                               }
                             } catch (err) {
                               console.error(err);
-                              setSaveStatus('Upload failed');
+                              setSaveStatus(err instanceof Error ? err.message : 'Upload failed');
                               setTimeout(() => setSaveStatus(null), 2000);
                             } finally {
                               setIsSaving(false);

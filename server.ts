@@ -34,7 +34,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
 });
 
 // Admin session storage (In-memory simulation)
@@ -174,14 +174,18 @@ const handleSettingsUpdate = (req: any, res: any) => {
 app.put('/api/settings', requireAdmin, handleSettingsUpdate);
 app.post('/api/settings', requireAdmin, handleSettingsUpdate);
 
-app.post('/api/upload', requireAdmin, upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No image uploaded' });
-  }
-  
-  // The file is saved in public/uploads, so the URL should be /uploads/filename
-  const imageUrl = `/uploads/${req.file.filename}`;
-  res.json({ url: imageUrl });
+app.post('/api/upload', requireAdmin, (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      console.error('Upload Error:', err);
+      return res.status(400).json({ error: err.message || 'File upload failed' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: imageUrl });
+  });
 });
 
 app.get('/api/pastor', (req, res) => {
