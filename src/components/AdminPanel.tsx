@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, BookOpen, Calendar, Heart, Shield, RefreshCw, Plus, Edit2, Trash2, Check, X, Bell, User, Layout, ArrowLeft, Eye } from 'lucide-react';
 import { translations } from '../translations';
-import { Language, ChurchSettings, Ministry, Sermon, Event, PrayerRequest, NewsLetter } from '../types';
+import { Language, ChurchSettings, Ministry, Sermon, Event, PrayerRequest, NewsLetter, GalleryItem } from '../types';
 
 interface AdminPanelProps {
   currentLanguage: Language;
@@ -15,6 +15,8 @@ interface AdminPanelProps {
   onSermonsUpdate: (newSer: Sermon[]) => void;
   events: Event[];
   onEventsUpdate: (newEv: Event[]) => void;
+  gallery: GalleryItem[];
+  onGalleryUpdate: (newGal: GalleryItem[]) => void;
   token: string;
 }
 
@@ -29,9 +31,11 @@ export default function AdminPanel({
   onSermonsUpdate,
   events,
   onEventsUpdate,
+  gallery,
+  onGalleryUpdate,
   token,
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'settings' | 'ministries' | 'sermons' | 'events' | 'prayers' | 'newsletters'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'ministries' | 'sermons' | 'events' | 'gallery' | 'prayers' | 'newsletters'>('settings');
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
@@ -65,6 +69,14 @@ export default function AdminPanel({
   });
 
   // Prayer requests & newsletters fetched from backend
+  // Gallery state & form
+  const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({
+    type: 'image',
+    url: '',
+    caption: { en: '', te: '' },
+    category: 'Church Events'
+  });
+
   const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
   const [newsletters, setNewsletters] = useState<NewsLetter[]>([]);
 
@@ -321,6 +333,47 @@ export default function AdminPanel({
     }
   };
 
+  const handleGallerySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/gallery', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(galleryForm)
+      });
+      if (response.ok) {
+        const data = await response.json();
+        onGalleryUpdate([data, ...gallery]);
+        setGalleryForm({ type: 'image', url: '', caption: { en: '', te: '' }, category: 'Church Events' });
+        showStatus('Gallery Item Added!');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleGalleryDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this gallery item?')) return;
+    try {
+      const response = await fetch(`/api/gallery/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        onGalleryUpdate(gallery.filter(item => item.id !== id));
+        showStatus('Gallery Item Deleted!');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Prayer Request status moderation
   const handlePrayerStatusChange = async (id: string, newStatus: 'Pending' | 'Praying' | 'Answered') => {
     try {
@@ -383,6 +436,7 @@ export default function AdminPanel({
               { id: 'ministries', label: 'Ministry Editor', icon: <BookOpen size={14} /> },
               { id: 'sermons', label: 'Sermons CRUD', icon: <Layout size={14} /> },
               { id: 'events', label: 'Events CRUD', icon: <Calendar size={14} /> },
+              { id: 'gallery', label: 'Gallery Admin', icon: <Eye size={14} /> },
               { id: 'prayers', label: 'Prayers Wall', icon: <Heart size={14} /> },
               { id: 'newsletters', label: 'Newsletter Inbox', icon: <Bell size={14} /> }
             ].map((tab) => (
@@ -728,6 +782,144 @@ export default function AdminPanel({
                       className="w-full bg-[#141414] border border-neutral-800 rounded p-2 text-xs"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Donation & Payment Details */}
+              <div className="p-4 border border-[#D4AF37]/20 bg-black/50 rounded space-y-4">
+                <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D4AF37]">Donation & Payment Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">Bank Name</label>
+                    <input
+                      type="text"
+                      value={localSettings.bankDetails?.bankName || ''}
+                      onChange={(e) => setLocalSettings({
+                        ...localSettings,
+                        bankDetails: { ...localSettings.bankDetails, bankName: e.target.value }
+                      })}
+                      className="w-full bg-[#141414] border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">Account Name</label>
+                    <input
+                      type="text"
+                      value={localSettings.bankDetails?.accountName || ''}
+                      onChange={(e) => setLocalSettings({
+                        ...localSettings,
+                        bankDetails: { ...localSettings.bankDetails, accountName: e.target.value }
+                      })}
+                      className="w-full bg-[#141414] border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">Account Number</label>
+                    <input
+                      type="text"
+                      value={localSettings.bankDetails?.accountNumber || ''}
+                      onChange={(e) => setLocalSettings({
+                        ...localSettings,
+                        bankDetails: { ...localSettings.bankDetails, accountNumber: e.target.value }
+                      })}
+                      className="w-full bg-[#141414] border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">IFSC Code</label>
+                    <input
+                      type="text"
+                      value={localSettings.bankDetails?.ifscCode || ''}
+                      onChange={(e) => setLocalSettings({
+                        ...localSettings,
+                        bankDetails: { ...localSettings.bankDetails, ifscCode: e.target.value }
+                      })}
+                      className="w-full bg-[#141414] border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">Branch</label>
+                    <input
+                      type="text"
+                      value={localSettings.bankDetails?.branch || ''}
+                      onChange={(e) => setLocalSettings({
+                        ...localSettings,
+                        bankDetails: { ...localSettings.bankDetails, branch: e.target.value }
+                      })}
+                      className="w-full bg-[#141414] border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">UPI ID</label>
+                    <input
+                      type="text"
+                      value={localSettings.donationUpi || ''}
+                      onChange={(e) => setLocalSettings({
+                        ...localSettings,
+                        donationUpi: e.target.value
+                      })}
+                      className="w-full bg-[#141414] border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-[9px] font-mono text-neutral-400 mb-1">Donation QR Code Image</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          setIsSaving(true);
+                          setSaveStatus('Uploading QR code...');
+                          try {
+                            const res = await fetch('/api/upload', {
+                              method: 'POST',
+                              headers: { 'Authorization': `Bearer ${token}` },
+                              body: formData,
+                            });
+                            if (res.ok) {
+                              const data = await res.json();
+                              setLocalSettings({ ...localSettings, donationQrCode: data.url });
+                              setSaveStatus('QR Code uploaded!');
+                              setTimeout(() => setSaveStatus(null), 2000);
+                            }
+                          } catch (err) {
+                            console.error(err);
+                            setSaveStatus('Upload failed');
+                            setTimeout(() => setSaveStatus(null), 2000);
+                          } finally {
+                            setIsSaving(false);
+                          }
+                        }
+                      }}
+                      className="hidden"
+                      id="donation_qr_upload"
+                    />
+                    <label 
+                      htmlFor="donation_qr_upload"
+                      className="px-3 py-1.5 bg-[#141414] border border-neutral-800 hover:border-[#D4AF37]/50 text-xs text-neutral-300 rounded cursor-pointer transition-colors whitespace-nowrap"
+                    >
+                      Choose Image
+                    </label>
+                    <input
+                      type="text"
+                      value={localSettings.donationQrCode || ''}
+                      onChange={(e) => setLocalSettings({ ...localSettings, donationQrCode: e.target.value })}
+                      placeholder="/uploads/qr.jpg"
+                      className="flex-1 bg-[#141414] border border-neutral-800 rounded px-2 text-xs text-neutral-400 focus:outline-none"
+                    />
+                  </div>
+                  {localSettings.donationQrCode && (
+                    <div className="mt-2 w-24 h-24 border border-neutral-800 rounded bg-white p-1">
+                      <img src={localSettings.donationQrCode} alt="Donation QR" className="w-full h-full object-contain" />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1232,6 +1424,161 @@ export default function AdminPanel({
                 </table>
               </div>
 
+            </div>
+          )}
+
+          {/* TAB: GALLERY CRUD */}
+          {activeTab === 'gallery' && (
+            <div className="space-y-8" id="gallery_crud_section">
+              <form onSubmit={handleGallerySubmit} className="bg-[#141414] border border-[#D4AF37]/25 p-6 rounded-lg space-y-4">
+                <h3 className="text-sm font-bold uppercase font-mono text-[#D4AF37] tracking-wider border-b border-neutral-800 pb-2">
+                  Upload Gallery Item
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Category */}
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">Category</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Church Events, Crusades..."
+                      value={galleryForm.category || ''}
+                      onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value })}
+                      className="w-full bg-black border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+
+                  {/* Upload File */}
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">Media Upload</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const formData = new FormData();
+                            formData.append('image', file);
+                            setIsSaving(true);
+                            setSaveStatus('Uploading media...');
+                            try {
+                              const res = await fetch('/api/upload', {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}` },
+                                body: formData,
+                              });
+                              if (res.ok) {
+                                const data = await res.json();
+                                setGalleryForm({ ...galleryForm, url: data.url });
+                                setSaveStatus('Media uploaded!');
+                                setTimeout(() => setSaveStatus(null), 2000);
+                              }
+                            } catch (err) {
+                              console.error(err);
+                              setSaveStatus('Upload failed');
+                              setTimeout(() => setSaveStatus(null), 2000);
+                            } finally {
+                              setIsSaving(false);
+                            }
+                          }
+                        }}
+                        className="hidden"
+                        id="form_gallery_upload"
+                      />
+                      <label 
+                        htmlFor="form_gallery_upload"
+                        className="px-3 py-1.5 bg-[#141414] border border-neutral-800 hover:border-[#D4AF37]/50 text-xs text-neutral-300 rounded cursor-pointer transition-colors whitespace-nowrap"
+                      >
+                        Choose File
+                      </label>
+                      <input
+                        type="text"
+                        value={galleryForm.url || ''}
+                        readOnly
+                        placeholder="Image URL"
+                        className="flex-1 bg-black border border-neutral-800 rounded px-2 text-xs text-neutral-400 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Caption EN */}
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">Caption (English)</label>
+                    <input
+                      type="text"
+                      required
+                      value={galleryForm.caption?.en || ''}
+                      onChange={(e) => setGalleryForm({
+                        ...galleryForm,
+                        caption: { ...galleryForm.caption!, en: e.target.value }
+                      })}
+                      className="w-full bg-black border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+
+                  {/* Caption TE */}
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-mono text-neutral-400">Caption (Telugu)</label>
+                    <input
+                      type="text"
+                      required
+                      value={galleryForm.caption?.te || ''}
+                      onChange={(e) => setGalleryForm({
+                        ...galleryForm,
+                        caption: { ...galleryForm.caption!, te: e.target.value }
+                      })}
+                      className="w-full bg-black border border-neutral-800 rounded p-2 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <button
+                    type="submit"
+                    disabled={isSaving || !galleryForm.url}
+                    className="px-5 py-2 bg-[#D4AF37] text-black font-bold uppercase text-[10px] font-mono tracking-widest rounded flex items-center space-x-1 hover:opacity-90 disabled:opacity-50"
+                  >
+                    <Plus size={12} />
+                    <span>Upload Media</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Data Table */}
+              <div className="bg-[#141414] border border-neutral-800 rounded-lg overflow-hidden shadow-lg">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead className="bg-black text-[#D4AF37] font-mono uppercase text-[9px] border-b border-neutral-800">
+                    <tr>
+                      <th className="p-4">Preview</th>
+                      <th className="p-4">Caption (English)</th>
+                      <th className="p-4">Category</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800">
+                    {gallery.map((item) => (
+                      <tr key={item.id} className="hover:bg-black/35">
+                        <td className="p-4">
+                          <img src={item.url} alt="Preview" className="w-12 h-12 object-cover rounded" />
+                        </td>
+                        <td className="p-4 font-bold text-white">{item.caption.en}</td>
+                        <td className="p-4">{item.category}</td>
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={() => handleGalleryDelete(item.id)}
+                            className="p-1.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition"
+                            title="Delete"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 

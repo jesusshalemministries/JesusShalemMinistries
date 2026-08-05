@@ -917,7 +917,7 @@ export default function App() {
 
             {/* 12. DONATE VIEW */}
             {currentPage === 'donate' && (
-              <DonateSection currentLanguage={currentLanguage} />
+              <DonateSection currentLanguage={currentLanguage} settings={settings} />
             )}
 
             {/* 13. ADMIN LOGIN PORTAL VIEW */}
@@ -994,6 +994,8 @@ export default function App() {
                 onSermonsUpdate={(nSer) => setSermons(nSer)}
                 events={events}
                 onEventsUpdate={(nEv) => setEvents(nEv)}
+                gallery={gallery}
+                onGalleryUpdate={(nGal) => setGallery(nGal)}
                 token={adminToken}
               />
             )}

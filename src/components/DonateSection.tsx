@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Heart, CreditCard, QrCode, Copy, CheckCircle, Smartphone, ArrowRight, ShieldCheck } from 'lucide-react';
 import { translations } from '../translations';
-import { Language } from '../types';
+import { Language, ChurchSettings } from '../types';
 
 interface DonateSectionProps {
   currentLanguage: Language;
+  settings: ChurchSettings;
 }
 
-export default function DonateSection({ currentLanguage }: DonateSectionProps) {
+export default function DonateSection({ currentLanguage, settings }: DonateSectionProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [successOffering, setSuccessOffering] = useState(false);
   const [offeringData, setOfferingData] = useState({ donor: '', amount: '', purpose: 'Offering' });
@@ -17,12 +18,12 @@ export default function DonateSection({ currentLanguage }: DonateSectionProps) {
   const t = translations[currentLanguage];
 
   const bankDetails = {
-    accountName: 'MANDE SHALEM RAJU',
-    bankName: 'UNION BANK OF INDIA',
-    accountNumber: '531102010011425',
-    ifscCode: 'UBIN0553115',
-    branch: 'KANCHIKACHARLA',
-    upiId: '7981788313@ybl'
+    accountName: settings.bankDetails?.accountName || '',
+    bankName: settings.bankDetails?.bankName || '',
+    accountNumber: settings.bankDetails?.accountNumber || '',
+    ifscCode: settings.bankDetails?.ifscCode || '',
+    branch: settings.bankDetails?.branch || '',
+    upiId: settings.donationUpi || ''
   };
 
   // Mock ledger to simulate active giving transparency
@@ -104,9 +105,9 @@ export default function DonateSection({ currentLanguage }: DonateSectionProps) {
             {/* Simulated QR Code Wrapper */}
             <div className="relative w-48 h-48 mx-auto p-2 bg-white rounded border-2 border-[#D4AF37] shadow-2xl flex items-center justify-center">
               <img
-                src={upiQrUrl}
+                src={settings.donationQrCode || upiQrUrl}
                 alt="Jesus Shalem Ministries UPI QR Code"
-                className="w-full h-full"
+                className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
